@@ -126,6 +126,10 @@ curl localhost:8080/albums
 
 ---
 
+## Part II: Learning Outcomes
+
+These are detailed in `Hw1b-learning_outcomes.pdf` file.
+
 ## Usage
 
 Once the server is running, you can interact with the API using curl, Postman, or any HTTP client.
