@@ -26,7 +26,38 @@ go.work.sum
 
 # env file
 .env
+.env.local
+*.env
 
 # Editor/IDE
-# .idea/
-# .vscode/
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Secrets
+terraform.tfvars
+*.pem
+*.key
+*.pub
+
+# Terraform
+.terraform/
+.terraform.lock.hcl
+terraform.tfstate
+terraform.tfstate.backup
+crash.log
+
+# docker ignore file
+.dockerignore
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Local development
+*.log
+dist/
+build/
