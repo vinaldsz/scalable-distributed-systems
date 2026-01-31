@@ -1,0 +1,295 @@
+fatal error: concurrent map writes
+
+goroutine 42 [running]:
+internal/runtime/maps.fatal({0x1050613a2?, 0x0?})
+        /usr/local/go/src/runtime/panic.go:1046 +0x20
+main.main.func1(0x7)
+        /Users/vinaldsouza/Desktop/Scalable-Systems/scalable-distributed-systems/hw3/collections.go:18 +0x68
+created by main.main in goroutine 1
+        /Users/vinaldsouza/Desktop/Scalable-Systems/scalable-distributed-systems/hw3/collections.go:15 +0x48
+
+goroutine 1 [runnable]:
+sync.(*WaitGroup).Add(0x1400010e020, 0x1)
+        /usr/local/go/src/sync/waitgroup.go:77 +0x274
+main.main()
+        /Users/vinaldsouza/Desktop/Scalable-Systems/scalable-distributed-systems/hw3/collections.go:14 +0x68
+
+goroutine 35 [runnable]:
+internal/runtime/maps.newarray(0x20?, 0x1050a4c00?)
+        /usr/local/go/src/runtime/malloc.go:1821 +0x1c
+internal/runtime/maps.newGroups(...)
+        /usr/local/go/src/internal/runtime/maps/group.go:316
+internal/runtime/maps.(*table).reset(0x14000072080, 0x105098a80, 0x100)
+        /usr/local/go/src/internal/runtime/maps/table.go:104 +0x3c
+internal/runtime/maps.newTable(0x105098a80, 0x100, 0x0, 0x0)
+        /usr/local/go/src/internal/runtime/maps/table.go:95 +0x84
+internal/runtime/maps.(*table).grow(0x14000072060, 0x105098a80, 0x1400011e0f0, 0x8110?)
+        /usr/local/go/src/internal/runtime/maps/table.go:1201 +0x3c
+internal/runtime/maps.(*table).rehash(0x1400011e0f0?, 0x105098a80?, 0x0?)
+        /usr/local/go/src/internal/runtime/maps/table.go:1136 +0x30
+main.main.func1(0x0)
+        /Users/vinaldsouza/Desktop/Scalable-Systems/scalable-distributed-systems/hw3/collections.go:18 +0x68
+created by main.main in goroutine 1
+        /Users/vinaldsouza/Desktop/Scalable-Systems/scalable-distributed-systems/hw3/collections.go:15 +0x48
+
+goroutine 36 [runnable]:
+main.main.gowrap1()
+        /Users/vinaldsouza/Desktop/Scalable-Systems/scalable-distributed-systems/hw3/collections.go:15
+runtime.goexit({})
+        /usr/local/go/src/runtime/asm_arm64.s:1268 +0x4
+created by main.main in goroutine 1
+        /Users/vinaldsouza/Desktop/Scalable-Systems/scalable-distributed-systems/hw3/collections.go:15 +0x48
+
+goroutine 37 [runnable]:
+main.main.gowrap1()
+        /Users/vinaldsouza/Desktop/Scalable-Systems/scalable-distributed-systems/hw3/collections.go:15
+runtime.goexit({})
+        /usr/local/go/src/runtime/asm_arm64.s:1268 +0x4
+created by main.main in goroutine 1
+        /Users/vinaldsouza/Desktop/Scalable-Systems/scalable-distributed-systems/hw3/collections.go:15 +0x48
+
+goroutine 38 [runnable]:
+main.main.gowrap1()
+        /Users/vinaldsouza/Desktop/Scalable-Systems/scalable-distributed-systems/hw3/collections.go:15
+runtime.goexit({})
+        /usr/local/go/src/runtime/asm_arm64.s:1268 +0x4
+created by main.main in goroutine 1
+        /Users/vinaldsouza/Desktop/Scalable-Systems/scalable-distributed-systems/hw3/collections.go:15 +0x48
+
+goroutine 39 [runnable]:
+main.main.gowrap1()
+        /Users/vinaldsouza/Desktop/Scalable-Systems/scalable-distributed-systems/hw3/collections.go:15
+runtime.goexit({})
+        /usr/local/go/src/runtime/asm_arm64.s:1268 +0x4
+created by main.main in goroutine 1
+        /Users/vinaldsouza/Desktop/Scalable-Systems/scalable-distributed-systems/hw3/collections.go:15 +0x48
+
+goroutine 40 [runnable]:
+main.main.gowrap1()
+        /Users/vinaldsouza/Desktop/Scalable-Systems/scalable-distributed-systems/hw3/collections.go:15
+runtime.goexit({})
+        /usr/local/go/src/runtime/asm_arm64.s:1268 +0x4
+created by main.main in goroutine 1
+        /Users/vinaldsouza/Desktop/Scalable-Systems/scalable-distributed-systems/hw3/collections.go:15 +0x48
+
+goroutine 41 [runnable]:
+main.main.gowrap1()
+        /Users/vinaldsouza/Desktop/Scalable-Systems/scalable-distributed-systems/hw3/collections.go:15
+runtime.goexit({})
+        /usr/local/go/src/runtime/asm_arm64.s:1268 +0x4
+created by main.main in goroutine 1
+        /Users/vinaldsouza/Desktop/Scalable-Systems/scalable-distributed-systems/hw3/collections.go:15 +0x48
+
+goroutine 43 [runnable]:
+main.main.gowrap1()
+        /Users/vinaldsouza/Desktop/Scalable-Systems/scalable-distributed-systems/hw3/collections.go:15
+runtime.goexit({})
+        /usr/local/go/src/runtime/asm_arm64.s:1268 +0x4
+created by main.main in goroutine 1
+        /Users/vinaldsouza/Desktop/Scalable-Systems/scalable-distributed-systems/hw3/collections.go:15 +0x48
+
+goroutine 44 [runnable]:
+main.main.gowrap1()
+        /Users/vinaldsouza/Desktop/Scalable-Systems/scalable-distributed-systems/hw3/collections.go:15
+runtime.goexit({})
+        /usr/local/go/src/runtime/asm_arm64.s:1268 +0x4
+created by main.main in goroutine 1
+        /Users/vinaldsouza/Desktop/Scalable-Systems/scalable-distributed-systems/hw3/collections.go:15 +0x48
+
+goroutine 45 [runnable]:
+main.main.gowrap1()
+        /Users/vinaldsouza/Desktop/Scalable-Systems/scalable-distributed-systems/hw3/collections.go:15
+runtime.goexit({})
+        /usr/local/go/src/runtime/asm_arm64.s:1268 +0x4
+created by main.main in goroutine 1
+        /Users/vinaldsouza/Desktop/Scalable-Systems/scalable-distributed-systems/hw3/collections.go:15 +0x48
+
+goroutine 46 [runnable]:
+main.main.gowrap1()
+        /Users/vinaldsouza/Desktop/Scalable-Systems/scalable-distributed-systems/hw3/collections.go:15
+runtime.goexit({})
+        /usr/local/go/src/runtime/asm_arm64.s:1268 +0x4
+created by main.main in goroutine 1
+        /Users/vinaldsouza/Desktop/Scalable-Systems/scalable-distributed-systems/hw3/collections.go:15 +0x48
+
+goroutine 47 [runnable]:
+main.main.gowrap1()
+        /Users/vinaldsouza/Desktop/Scalable-Systems/scalable-distributed-systems/hw3/collections.go:15
+runtime.goexit({})
+        /usr/local/go/src/runtime/asm_arm64.s:1268 +0x4
+created by main.main in goroutine 1
+        /Users/vinaldsouza/Desktop/Scalable-Systems/scalable-distributed-systems/hw3/collections.go:15 +0x48
+
+goroutine 48 [runnable]:
+main.main.gowrap1()
+        /Users/vinaldsouza/Desktop/Scalable-Systems/scalable-distributed-systems/hw3/collections.go:15
+runtime.goexit({})
+        /usr/local/go/src/runtime/asm_arm64.s:1268 +0x4
+created by main.main in goroutine 1
+        /Users/vinaldsouza/Desktop/Scalable-Systems/scalable-distributed-systems/hw3/collections.go:15 +0x48
+
+goroutine 49 [runnable]:
+main.main.gowrap1()
+        /Users/vinaldsouza/Desktop/Scalable-Systems/scalable-distributed-systems/hw3/collections.go:15
+runtime.goexit({})
+        /usr/local/go/src/runtime/asm_arm64.s:1268 +0x4
+created by main.main in goroutine 1
+        /Users/vinaldsouza/Desktop/Scalable-Systems/scalable-distributed-systems/hw3/collections.go:15 +0x48
+
+goroutine 50 [runnable]:
+main.main.gowrap1()
+        /Users/vinaldsouza/Desktop/Scalable-Systems/scalable-distributed-systems/hw3/collections.go:15
+runtime.goexit({})
+        /usr/local/go/src/runtime/asm_arm64.s:1268 +0x4
+created by main.main in goroutine 1
+        /Users/vinaldsouza/Desktop/Scalable-Systems/scalable-distributed-systems/hw3/collections.go:15 +0x48
+
+goroutine 51 [running]:
+        goroutine running on other thread; stack unavailable
+created by main.main in goroutine 1
+        /Users/vinaldsouza/Desktop/Scalable-Systems/scalable-distributed-systems/hw3/collections.go:15 +0x48
+
+goroutine 52 [runnable]:
+main.main.gowrap1()
+        /Users/vinaldsouza/Desktop/Scalable-Systems/scalable-distributed-systems/hw3/collections.go:15
+runtime.goexit({})
+        /usr/local/go/src/runtime/asm_arm64.s:1268 +0x4
+created by main.main in goroutine 1
+        /Users/vinaldsouza/Desktop/Scalable-Systems/scalable-distributed-systems/hw3/collections.go:15 +0x48
+
+goroutine 53 [runnable]:
+main.main.gowrap1()
+        /Users/vinaldsouza/Desktop/Scalable-Systems/scalable-distributed-systems/hw3/collections.go:15
+runtime.goexit({})
+        /usr/local/go/src/runtime/asm_arm64.s:1268 +0x4
+created by main.main in goroutine 1
+        /Users/vinaldsouza/Desktop/Scalable-Systems/scalable-distributed-systems/hw3/collections.go:15 +0x48
+
+goroutine 54 [runnable]:
+main.main.gowrap1()
+        /Users/vinaldsouza/Desktop/Scalable-Systems/scalable-distributed-systems/hw3/collections.go:15
+runtime.goexit({})
+        /usr/local/go/src/runtime/asm_arm64.s:1268 +0x4
+created by main.main in goroutine 1
+        /Users/vinaldsouza/Desktop/Scalable-Systems/scalable-distributed-systems/hw3/collections.go:15 +0x48
+
+goroutine 55 [runnable]:
+main.main.gowrap1()
+        /Users/vinaldsouza/Desktop/Scalable-Systems/scalable-distributed-systems/hw3/collections.go:15
+runtime.goexit({})
+        /usr/local/go/src/runtime/asm_arm64.s:1268 +0x4
+created by main.main in goroutine 1
+        /Users/vinaldsouza/Desktop/Scalable-Systems/scalable-distributed-systems/hw3/collections.go:15 +0x48
+
+goroutine 56 [runnable]:
+main.main.gowrap1()
+        /Users/vinaldsouza/Desktop/Scalable-Systems/scalable-distributed-systems/hw3/collections.go:15
+runtime.goexit({})
+        /usr/local/go/src/runtime/asm_arm64.s:1268 +0x4
+created by main.main in goroutine 1
+        /Users/vinaldsouza/Desktop/Scalable-Systems/scalable-distributed-systems/hw3/collections.go:15 +0x48
+
+goroutine 57 [runnable]:
+main.main.gowrap1()
+        /Users/vinaldsouza/Desktop/Scalable-Systems/scalable-distributed-systems/hw3/collections.go:15
+runtime.goexit({})
+        /usr/local/go/src/runtime/asm_arm64.s:1268 +0x4
+created by main.main in goroutine 1
+        /Users/vinaldsouza/Desktop/Scalable-Systems/scalable-distributed-systems/hw3/collections.go:15 +0x48
+
+goroutine 58 [runnable]:
+main.main.gowrap1()
+        /Users/vinaldsouza/Desktop/Scalable-Systems/scalable-distributed-systems/hw3/collections.go:15
+runtime.goexit({})
+        /usr/local/go/src/runtime/asm_arm64.s:1268 +0x4
+created by main.main in goroutine 1
+        /Users/vinaldsouza/Desktop/Scalable-Systems/scalable-distributed-systems/hw3/collections.go:15 +0x48
+
+goroutine 59 [runnable]:
+main.main.gowrap1()
+        /Users/vinaldsouza/Desktop/Scalable-Systems/scalable-distributed-systems/hw3/collections.go:15
+runtime.goexit({})
+        /usr/local/go/src/runtime/asm_arm64.s:1268 +0x4
+created by main.main in goroutine 1
+        /Users/vinaldsouza/Desktop/Scalable-Systems/scalable-distributed-systems/hw3/collections.go:15 +0x48
+
+goroutine 60 [runnable]:
+main.main.gowrap1()
+        /Users/vinaldsouza/Desktop/Scalable-Systems/scalable-distributed-systems/hw3/collections.go:15
+runtime.goexit({})
+        /usr/local/go/src/runtime/asm_arm64.s:1268 +0x4
+created by main.main in goroutine 1
+        /Users/vinaldsouza/Desktop/Scalable-Systems/scalable-distributed-systems/hw3/collections.go:15 +0x48
+
+goroutine 61 [runnable]:
+main.main.gowrap1()
+        /Users/vinaldsouza/Desktop/Scalable-Systems/scalable-distributed-systems/hw3/collections.go:15
+runtime.goexit({})
+        /usr/local/go/src/runtime/asm_arm64.s:1268 +0x4
+created by main.main in goroutine 1
+        /Users/vinaldsouza/Desktop/Scalable-Systems/scalable-distributed-systems/hw3/collections.go:15 +0x48
+
+goroutine 62 [runnable]:
+main.main.gowrap1()
+        /Users/vinaldsouza/Desktop/Scalable-Systems/scalable-distributed-systems/hw3/collections.go:15
+runtime.goexit({})
+        /usr/local/go/src/runtime/asm_arm64.s:1268 +0x4
+created by main.main in goroutine 1
+        /Users/vinaldsouza/Desktop/Scalable-Systems/scalable-distributed-systems/hw3/collections.go:15 +0x48
+
+goroutine 63 [runnable]:
+main.main.gowrap1()
+        /Users/vinaldsouza/Desktop/Scalable-Systems/scalable-distributed-systems/hw3/collections.go:15
+runtime.goexit({})
+        /usr/local/go/src/runtime/asm_arm64.s:1268 +0x4
+created by main.main in goroutine 1
+        /Users/vinaldsouza/Desktop/Scalable-Systems/scalable-distributed-systems/hw3/collections.go:15 +0x48
+
+goroutine 64 [runnable]:
+main.main.gowrap1()
+        /Users/vinaldsouza/Desktop/Scalable-Systems/scalable-distributed-systems/hw3/collections.go:15
+runtime.goexit({})
+        /usr/local/go/src/runtime/asm_arm64.s:1268 +0x4
+created by main.main in goroutine 1
+        /Users/vinaldsouza/Desktop/Scalable-Systems/scalable-distributed-systems/hw3/collections.go:15 +0x48
+
+goroutine 65 [runnable]:
+main.main.gowrap1()
+        /Users/vinaldsouza/Desktop/Scalable-Systems/scalable-distributed-systems/hw3/collections.go:15
+runtime.goexit({})
+        /usr/local/go/src/runtime/asm_arm64.s:1268 +0x4
+created by main.main in goroutine 1
+        /Users/vinaldsouza/Desktop/Scalable-Systems/scalable-distributed-systems/hw3/collections.go:15 +0x48
+
+goroutine 66 [runnable]:
+main.main.gowrap1()
+        /Users/vinaldsouza/Desktop/Scalable-Systems/scalable-distributed-systems/hw3/collections.go:15
+runtime.goexit({})
+        /usr/local/go/src/runtime/asm_arm64.s:1268 +0x4
+created by main.main in goroutine 1
+        /Users/vinaldsouza/Desktop/Scalable-Systems/scalable-distributed-systems/hw3/collections.go:15 +0x48
+
+goroutine 67 [runnable]:
+main.main.gowrap1()
+        /Users/vinaldsouza/Desktop/Scalable-Systems/scalable-distributed-systems/hw3/collections.go:15
+runtime.goexit({})
+        /usr/local/go/src/runtime/asm_arm64.s:1268 +0x4
+created by main.main in goroutine 1
+        /Users/vinaldsouza/Desktop/Scalable-Systems/scalable-distributed-systems/hw3/collections.go:15 +0x48
+
+goroutine 68 [runnable]:
+main.main.gowrap1()
+        /Users/vinaldsouza/Desktop/Scalable-Systems/scalable-distributed-systems/hw3/collections.go:15
+runtime.goexit({})
+        /usr/local/go/src/runtime/asm_arm64.s:1268 +0x4
+created by main.main in goroutine 1
+        /Users/vinaldsouza/Desktop/Scalable-Systems/scalable-distributed-systems/hw3/collections.go:15 +0x48
+
+goroutine 69 [runnable]:
+main.main.gowrap1()
+        /Users/vinaldsouza/Desktop/Scalable-Systems/scalable-distributed-systems/hw3/collections.go:15
+runtime.goexit({})
+        /usr/local/go/src/runtime/asm_arm64.s:1268 +0x4
+created by main.main in goroutine 1
+        /Users/vinaldsouza/Desktop/Scalable-Systems/scalable-distributed-systems/hw3/collections.go:15 +0x48
+exit status 2
