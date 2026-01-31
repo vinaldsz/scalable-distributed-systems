@@ -1,25 +1,23 @@
-from locust import HttpUser, task, between
+from locust import FastHttpUser, task, between
 
-class AlbumUser(HttpUser):
-    wait_time = between(1, 3)  # Wait 1-3 seconds between requests
+class AlbumsUser(FastHttpUser):
+    # Wait 1-2 seconds between requests (simulates real user behavior)
+    wait_time = between(1, 2)
     
-    @task(4)  # Runs 4x more often
-    def get_all_albums(self):
-        """GET /albums - Retrieve all albums"""
+    # Base URL of your server
+    host = "http://52.24.162.55:8080"  # Replace with YOUR actual EC2 IP
+    
+    @task(3)  # Weight 3 - runs 3x more than POST
+    def get_albums(self):
+        """GET all albums"""
         self.client.get("/albums")
     
-    @task(2)  # Runs 2x more often
-    def get_album_by_id(self):
-        """GET /albums/:id - Retrieve specific album"""
-        self.client.get("/albums/1")
-    
-    @task(1)  # Runs 1x
-    def create_album(self):
-        """POST /albums - Create new album"""
-        payload = {
+    @task(1)  # Weight 1 - runs less frequently
+    def post_album(self):
+        """POST new album"""
+        self.client.post("/albums", json={
             "id": "4",
-            "title": "Kind of Blue",
-            "artist": "Miles Davis",
-            "price": 45.99
-        }
-        self.client.post("/albums", json=payload)
+            "title": "The Modern Sound of Betty Carter",
+            "artist": "Betty Carter",
+            "price": 49.99
+        })

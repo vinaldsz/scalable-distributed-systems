@@ -500,6 +500,8 @@ This might seem counterintuitive, but here's what's happening:
 
 # Locust Load Testing Observations
 
+## Local Tests
+
 ## Setup
 
 - Target: `http://host.docker.internal:8080`
@@ -529,3 +531,275 @@ This might seem counterintuitive, but here's what's happening:
 - No failures for both GET and POST.
 - Percentiles give a clearer view of tail latency under load.
 - Response times increase at higher percentiles as concurrency grows.
+
+## Setup
+
+- Target: `http://<PUBLIC_IP>:8080`
+- Endpoints tested: `GET /albums`, `GET /albums/1`, `POST /albums`
+- Docker on EC2, test by running `locust -f locustfile.py`
+
+## 1 User (1 worker)
+
+- **Failures:** 0
+- **95%ile:** ~62 ms (aggregated)
+- **99%ile:** ~150 ms (aggregated)
+- **Avg:** ~46.15 ms (aggregated)
+
+Conclusion:
+
+- There is no error since the RACE condition causes data corruption and doesn't necessarily cause any http issue.
+
+# Amdahl's Law Analysis
+
+## 🎯 Objective
+
+Test whether adding more Locust workers (client-side parallelism) improves throughput when load-testing a single EC2 server instance.
+
+## 🔧 Test Configuration
+
+### Infrastructure
+
+- **Server**: EC2 t3.micro (1 vCPU, 1GB RAM)
+- **Application**: Go REST API serving `/albums` endpoints
+- **Load Generator**: Locust with Docker Compose
+- **Task Ratio**: GET:POST = 3:1 (configured in locustfile)
+
+### Test Parameters
+
+| Test # | Workers | Users | Spawn Rate | Command                              |
+| ------ | ------- | ----- | ---------- | ------------------------------------ |
+| Test 1 | 1       | 1     | 1/s        | `docker-compose up --scale worker=1` |
+| Test 2 | 1       | 50    | 10/s       | `docker-compose up --scale worker=1` |
+| Test 3 | 4       | 50    | 10/s       | `docker-compose up --scale worker=4` |
+
+---
+
+## 📊 Results
+
+### Test 1: Baseline (1 Worker, 1 User)
+
+![Baseline Test](Amdahl1.png)
+
+### Test 2: Single Worker Under Load (1 Worker, 50 Users)
+
+![Single Worker Load Test](Amdahl1-50.png)
+
+### Test 3: Multiple Workers (4 Workers, 50 Users)
+
+![Multiple Workers Test](Amdahl4-50.png)
+
+---
+
+## 📈 Performance Comparison
+
+| Test       | Workers | Users | **Total RPS** | GET RPS | POST RPS | GET Median | POST Median | Failures |
+| ---------- | ------- | ----- | ------------- | ------- | -------- | ---------- | ----------- | -------- |
+| **Test 1** | 1       | 1     | **0.6/s**     | 0.4/s   | 0.2/s    | 150ms      | 47ms        | 0%       |
+| **Test 2** | 1       | 50    | **30.3/s** ✅ | 22.9/s  | 7.4/s    | 160ms      | 42ms        | 0%       |
+| **Test 3** | 4       | 50    | **28.8/s** ❌ | 21.6/s  | 7.2/s    | 220ms      | 44ms        | 0%       |
+
+### 🔍 Key Observations
+
+#### 1. **Negative Speedup with 4 Workers**
+
+```
+Speedup = 28.8 / 30.3 = 0.95x  (5% SLOWER!)
+```
+
+#### 2. **Increased Latency**
+
+- **GET Median**: 160ms → 220ms (+37%)
+- **POST Median**: 42ms → 44ms (+5%)
+
+#### 3. **GET:POST Ratio Maintained**
+
+- Test 1: 4.3:1
+- Test 2: 3.2:1
+- Test 3: 3.1:1  
+  ✅ Close to expected 3:1 ratio from task weights
+
+---
+
+## 💡 Why Did Adding Workers Make Things WORSE?
+
+### The Bottleneck: Server, Not Client
+
+| Scenario      | Client Side               | Server Side                            | Result       |
+| ------------- | ------------------------- | -------------------------------------- | ------------ |
+| **1 Worker**  | Generates 30 req/s        | Handles 30 req/s @ 70-80% CPU          | ✅ Balanced  |
+| **4 Workers** | Try to generate 120 req/s | **Still handles ~29 req/s @ 100% CPU** | ❌ Saturated |
+
+### What's Happening?
+
+```
+┌─────────────────────────────────────────┐
+│  4 Locust Workers (Client)              │
+│  ↓ ↓ ↓ ↓  (120 req/s attempted)        │
+└─────────────────────────────────────────┘
+              ↓
+        Network Queue
+              ↓
+┌─────────────────────────────────────────┐
+│  Single EC2 t3.micro (Server)           │
+│  🔥 CPU: 100% MAXED OUT                 │
+│  📊 Throughput: ~29 req/s (SAME!)       │
+│  ⏱️ Latency: INCREASED (queuing delay) │
+└─────────────────────────────────────────┘
+```
+
+### Root Causes
+
+1. **Server CPU Saturation** (100% utilization)
+   - t3.micro has only **1 vCPU**
+   - Server can't process more than ~30 req/s regardless of client workers
+
+2. **Request Queuing**
+   - Extra workers send more requests simultaneously
+   - Requests queue up waiting for server CPU
+   - Queue depth → higher latency (160ms → 220ms)
+
+3. **Resource Contention**
+   - More concurrent connections = more goroutines/threads on server
+   - Context switching overhead increases
+   - Slight throughput decrease (30.3 → 28.8)
+
+---
+
+**The server is the serial bottleneck**, so adding client-side parallelism provides **zero benefit**.
+
+---
+
+## 🧪 How Shared Data Structures Affect This
+
+### Race Condition on `albums` Slice
+
+Our server uses an **unsynchronized slice**:
+
+```go
+var albums = []album{...}  // SHARED STATE
+
+func postAlbums(c *gin.Context) {
+    albums = append(albums, newAlbum)  // ⚠️ RACE CONDITION!
+}
+```
+
+### Impact Under Load
+
+| Aspect                 | Effect                                         |
+| ---------------------- | ---------------------------------------------- |
+| **No Lock Protection** | Multiple goroutines can corrupt `albums` slice |
+| **HTTP Failures**      | ❌ None observed (0% failures)                 |
+| **Data Corruption**    | ✅ Likely! (lost/duplicate albums)             |
+| **Performance**        | Slightly worse with contention                 |
+
+#### Why No HTTP Failures?
+
+**Race conditions don't always cause crashes** — they cause **silent data corruption**:
+
+- POST succeeds (returns 201)
+- But album may be lost or duplicated
+- GET returns incomplete data
+- No errors logged
+
+To detect: Run with `-race` flag or verify album count after load test.
+
+---
+
+### If server uses mutex-protected data structure
+
+````go
+type AlbumStore struct {
+    mu     sync.Mutex  // or sync.RWMutex
+    albums []Album
+}
+
+func (s *AlbumStore) GetAlbums() []Album {
+    s.mu.Lock()           // ← BLOCKS all other requests
+    defer s.mu.Unlock()
+    return s.albums
+}
+
+func (s *AlbumStore) AddAlbum(album Album) {
+    s.mu.Lock()           // ← BLOCKS all other requests
+    defer s.mu.Unlock()
+    s.albums = append(s.albums, album)
+}```
+
+**What happens under load:**
+````
+
+50 concurrent requests arrive:
+
+Request 1 (GET) → Acquires lock → Processes → Releases lock (10ms)
+Request 2 (GET) → WAITS... → Acquires lock → Processes → Releases (10ms)
+Request 3 (POST) → WAITS... → Acquires lock → Processes → Releases (10ms)
+...
+Request 50 (GET) → WAITS... → Acquires lock → Processes → Releases (10ms)
+
+- Causes contention overhead
+
+### If server uses RWMutex data structure
+
+**With RWMutex:**
+
+- Multiple GETs can run concurrently
+- Only POST blocks everyone
+- Better for 75% GET workload
+- Would see better scaling with 4 workers
+
+**If you used sync.Map:**
+
+- Optimized for concurrent access
+- Even better scaling
+- Closer to linear speedup
+
+# Context Switching Test
+
+## HttpUser vs FastHttpUser (Screenshots)
+
+### HttpUser (Python requests)
+
+- **1 worker, 1 user:**
+  ![HttpUser 1 user](Amdahl1.png)
+- **1 worker, 50 users:**
+  ![HttpUser 50 users](Amdahl1-50.png)
+- **4 workers, 50 users:**
+  ![HttpUser 4 workers](Amdahl4-50.png)
+
+### FastHttpUser (C-based client)
+
+- **1 worker, 1 user:**
+  ![FastHttpUser 1 user](fastHttpUser1.png)
+- **4 workers, 50 users:**
+  ![FastHttpUser 50 users](fastHttpUser50.png)
+
+## Median Comparison Table (fill from screenshots)
+
+| Client Type  | Workers | Users | GET Median | POST Median | Aggregated Median | Notes                   |
+| ------------ | ------- | ----- | ---------- | ----------- | ----------------- | ----------------------- |
+| HttpUser     | 1       | 1     | 150        | 47          | 150               | From Amdahl1.png        |
+| HttpUser     | 4       | 50    | 220        | 44          | 200               | From Amdahl4-50.png     |
+| FastHttpUser | 1       | 1     | 200        | 41          | 200               | From fastHttpUser1.png  |
+| FastHttpUser | 4       | 50    | 320        | 46          | 270               | From fastHttpUser50.png |
+
+## Comparison
+
+HttpUser behavior (polite):
+
+- Sends request
+- WAITS for response (blocks)
+- Processes response
+- Waits 1-2 seconds
+- Sends next request
+
+Server sees: Manageable stream of requests
+
+FastHttpUser behavior (aggressive):
+
+- Sends request
+- Doesn't wait! (async)
+- Sends another request immediately
+- And another...
+- Overwhelms server!
+
+Server sees: FLOOD of concurrent requests
