@@ -1,0 +1,41 @@
+[+] Building 69.6s (16/16) FINISHED                                  docker-container:singlearch
+ => [internal] load build definition from Dockerfile                                        0.0s
+ => => transferring dockerfile: 711B                                                        0.0s
+ => resolve image config for docker-image://docker.io/docker/dockerfile:1                   1.4s
+ => [auth] docker/dockerfile:pull token for registry-1.docker.io                            0.0s
+ => docker-image://docker.io/docker/dockerfile:1@sha256:b6afd42430b15f2d2a4c5a02b919e98a52  0.5s
+ => => resolve docker.io/docker/dockerfile:1@sha256:b6afd42430b15f2d2a4c5a02b919e98a525b78  0.0s
+ => => sha256:0285701bc73306b992f78de737bc58aa979843b49a277151b4bab0835a 12.52MB / 12.52MB  0.4s
+ => => extracting sha256:0285701bc73306b992f78de737bc58aa979843b49a277151b4bab0835ab77f6b   0.1s
+ => [internal] load metadata for docker.io/library/golang:1.23-alpine                       0.8s
+ => [auth] library/golang:pull token for registry-1.docker.io                               0.0s
+ => [internal] load .dockerignore                                                           0.0s
+ => => transferring context: 248B                                                           0.0s
+ => [1/6] FROM docker.io/library/golang:1.23-alpine@sha256:383395b794dffa5b53012a212365d40  3.9s
+ => => resolve docker.io/library/golang:1.23-alpine@sha256:383395b794dffa5b53012a212365d40  0.0s
+ => => sha256:4f4fb700ef54461cfa02571ae0db9a0dc1e0cdb5577484a6d75e68dc38e8acc1 32B / 32B    0.2s
+ => => sha256:d3178a7b27090e22bc2464346d1cdc8f59d0fd7a241452e8148342edf3d0b1e9 126B / 126B  0.3s
+ => => sha256:d5791340ef181f05ef1e99760e4be81cb2008d99b2bc1e56b2faa9b629 74.07MB / 74.07MB  2.3s
+ => => sha256:8371a51cbc44c1323f96695eaeaeeb1c44b2d30d138a279b348af5c1 282.45kB / 282.45kB  0.4s
+ => => sha256:9824c27679d3b27c5e1cb00a73adb6f4f8d556994111c12db3c5d61a0c84 3.80MB / 3.80MB  0.7s
+ => => extracting sha256:9824c27679d3b27c5e1cb00a73adb6f4f8d556994111c12db3c5d61a0c843df8   0.1s
+ => => extracting sha256:8371a51cbc44c1323f96695eaeaeeb1c44b2d30d138a279b348af5c18b2c5e24   0.0s
+ => => extracting sha256:d5791340ef181f05ef1e99760e4be81cb2008d99b2bc1e56b2faa9b6295d0ac3   1.4s
+ => => extracting sha256:d3178a7b27090e22bc2464346d1cdc8f59d0fd7a241452e8148342edf3d0b1e9   0.0s
+ => => extracting sha256:4f4fb700ef54461cfa02571ae0db9a0dc1e0cdb5577484a6d75e68dc38e8acc1   0.0s
+ => [internal] load build context                                                           0.1s
+ => => transferring context: 11.31kB                                                        0.0s
+ => [2/6] WORKDIR /app                                                                      0.4s
+ => [3/6] COPY go.mod go.sum ./                                                             0.0s
+ => [4/6] RUN go mod download                                                               2.8s
+ => [5/6] COPY *.go ./                                                                      0.1s
+ => [6/6] RUN CGO_ENABLED=0 GOOS=linux go build -o /hw2                                    45.5s
+ => exporting to image                                                                     13.9s
+ => => exporting layers                                                                     6.6s
+ => => exporting manifest sha256:a1d605c64808e7e65b056e4ced57c6ceafb4fe5e102eabeaba40d3eae  0.0s
+ => => exporting config sha256:0314a198bf311ac51550f3f6329c3bac3191ebd4b94099b1b4b543c83f8  0.0s
+ => => exporting attestation manifest sha256:594bdbd3d06307d03ebb985159b8525d206f77045a62f  0.0s
+ => => exporting manifest list sha256:9fb60e32c0435e5cbacb3fa2e4d4250ed829f4ffb6acc9b591f6  0.0s
+ => => pushing layers                                                                       6.3s
+ => => pushing manifest for 614349772916.dkr.ecr.us-west-2.amazonaws.com/hello-service:lat  0.9s
+ => [auth] sharing credentials for 614349772916.dkr.ecr.us-west-2.amazonaws.com             0.0s
