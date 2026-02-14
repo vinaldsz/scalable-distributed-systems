@@ -59,5 +59,31 @@ crash.log
 
 # Local development
 *.log
+*.logs
 dist/
 build/
+
+# Large data and test files
+*.jsonl
+*.csv
+input/
+MapReduce/input/
+
+# Python artifacts
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+*.egg
+dist/
+
+# Binary executables (built from source)
+newmain
+mapper
+reducer
+splitter
+
+# Node modules (if any)
+node_modules/

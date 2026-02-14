@@ -67,11 +67,24 @@ func main() {
         chunkSize := len(text) / req.NumChunks
         var chunkURLs []string
         
+        start := 0
         for i := 0; i < req.NumChunks; i++ {
-            start := i * chunkSize
-            end := start + chunkSize
+            var end int
             if i == req.NumChunks-1 {
+                // Last chunk gets everything remaining
                 end = len(text)
+            } else {
+                // Find approximate end position
+                end = start + chunkSize
+                
+                // Move forward to the next whitespace to avoid splitting words
+                for end < len(text) && !isWhitespace(text[end]) {
+                    end++
+                }
+                // Skip the whitespace itself
+                for end < len(text) && isWhitespace(text[end]) {
+                    end++
+                }
             }
             
             chunk := text[start:end]
@@ -90,10 +103,18 @@ func main() {
             
             chunkURL := fmt.Sprintf("s3://%s/%s", bucket, chunkKey)
             chunkURLs = append(chunkURLs, chunkURL)
+            
+            // Update start for next chunk
+            start = end
         }
         
         c.JSON(200, SplitResponse{ChunkURLs: chunkURLs})
     })
     
     router.Run(":8080")
+}
+
+// isWhitespace checks if a byte is a whitespace character
+func isWhitespace(b byte) bool {
+    return b == ' ' || b == '\t' || b == '\n' || b == '\r'
 }
