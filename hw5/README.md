@@ -120,6 +120,118 @@ curl -X POST http://localhost:8080/products/12345/details \
 curl http://localhost:8080/products/12345
 ```
 
+## Stress Testing with Locust
+
+### Prerequisites
+
+- **Docker & docker-compose**: For containerized load testing
+- **Python 3.10+**: If running Locust locally (optional)
+- **Locust 2.43.1+**: Load testing framework
+- **Gevent**: For FastHttpUser (included with Locust)
+- **requests**: HTTP library (included with Locust)
+
+### Quick Start
+
+1. **Start the entire stack (API + Locust):**
+
+```bash
+docker-compose up
+```
+
+This launches:
+
+- Product API on `http://localhost:8080`
+- Locust web UI on `http://localhost:8089`
+
+2. **Run automated tests (headless, no manual UI interaction):**
+
+```bash
+chmod +x automated_tests.sh
+./automated_tests.sh
+```
+
+This runs three scenarios sequentially and exports CSV results:
+
+- **Read-Heavy** (100 users, 80% GET / 20% POST, 180s)
+- **Balanced** (60 users, 50% GET / 50% POST, 180s)
+- **Write-Heavy** (40 users, 20% GET / 80% POST, 240s)
+
+Results saved to `test_results_YYYYMMDD_HHMMSS/` directory.
+
+3. **Or use the interactive web UI:**
+
+```bash
+./run_test.sh read-heavy 100 180
+```
+
+Then open `http://localhost:8089` in your browser to monitor in real-time.
+
+### Test Scenarios
+
+| Scenario    | Users | GETs | POSTs | Duration | Purpose                               |
+| ----------- | ----- | ---- | ----- | -------- | ------------------------------------- |
+| Read-Heavy  | 100   | 80%  | 20%   | 180s     | Test RLock parallelism                |
+| Balanced    | 60    | 50%  | 50%   | 180s     | Test lock contention with mixed load  |
+| Write-Heavy | 40    | 20%  | 80%   | 240s     | Test exclusive write lock performance |
+
+### Performance Analysis
+
+After running tests, review [STRESS_TEST_RESULTS.md](STRESS_TEST_RESULTS.md) for:
+
+- Response time metrics (median, 95th, 99th percentiles)
+- HttpUser vs FastHttpUser comparison
+- Lock contention evidence
+- Data structure optimization recommendations
+
+### Local Locust Installation (Alternative)
+
+If you prefer running Locust locally without Docker:
+
+```bash
+# Install Locust
+pip install locust==2.43.1
+
+# Run load test interactively
+locust -f locustfile.py --host=http://localhost:8080
+
+# Or headless
+locust -f locustfile.py --host=http://localhost:8080 \
+  -u 100 --spawn-rate 5 --run-time 180 --headless \
+  ReadHeavyHttpUser ReadHeavyFastHttpUser
+```
+
+### Troubleshooting
+
+**Port 8089 already in use:**
+
+```bash
+lsof -i :8089
+kill <PID>
+```
+
+**Locust container fails to start:**
+
+```bash
+docker-compose logs locust
+docker-compose up --build
+```
+
+**API not responding in tests:**
+
+```bash
+curl http://localhost:8080/products/1
+# Should return JSON response (even if 404)
+```
+
+**View detailed test metrics:**
+
+```bash
+# CSV results per test
+cat test_results_*/read-heavy/results_stats.csv
+cat test_results_*/balanced/results_stats.csv
+cat test_results_*/write-heavy/results_stats.csv
+```
+
 ## AWS Deployment with Terraform
 
 ### Prerequisites
