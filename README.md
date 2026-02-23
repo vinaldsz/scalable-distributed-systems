@@ -4,15 +4,15 @@ A collection of hands-on assignments covering distributed systems patterns, conc
 
 ## Assignments
 
-| Assignment | Focus                     | Key Concepts                                                                                         |
-| ---------- | ------------------------- | ---------------------------------------------------------------------------------------------------- |
-| **HW1a**   | Go Fundamentals           | Basic Go programming, module setup                                                                   |
-| **HW1b**   | Performance Analysis      | Benchmarking, profiling, optimization                                                                |
-| **HW2**    | Cloud Infrastructure      | Terraform, AWS (EC2, VPC, security groups), infrastructure-as-code                                   |
-| **HW3**    | Concurrency Patterns      | Mutexes (RWMutex), sync.Map, atomic operations, context switching, thread safety                     |
-| **HW4**    | MapReduce Framework       | Distributed computing, containerization (Docker), data processing pipeline                           |
-| **HW5**    | Load Testing & API Design | Product API (Go), Locust load testing, HttpUser vs FastHttpUser comparison, lock contention analysis |
-| **HW6**    | Horizontal Scaling        | ECS Fargate, ALB, auto-scaling policies, CloudWatch metrics, load testing at scale                   |
+| Assignment   | Focus                     | Key Concepts                                                                                         |
+| ------------ | ------------------------- | ---------------------------------------------------------------------------------------------------- |
+| **Topic 1**  | Go Fundamentals           | Basic Go programming, module setup                                                                   |
+| **Topic 1b** | Performance Analysis      | Benchmarking, profiling, optimization                                                                |
+| **Topic 2**  | Cloud Infrastructure      | Terraform, AWS (EC2, VPC, security groups), infrastructure-as-code                                   |
+| **Topic 3**  | Concurrency Patterns      | Mutexes (RWMutex), sync.Map, atomic operations, context switching, thread safety                     |
+| **Topic 4**  | MapReduce Framework       | Distributed computing, containerization (Docker), data processing pipeline                           |
+| **Topic 5**  | Load Testing & API Design | Product API (Go), Locust load testing, HttpUser vs FastHttpUser comparison, lock contention analysis |
+| **Topic 6**  | Horizontal Scaling        | ECS Fargate, ALB, auto-scaling policies, CloudWatch metrics, load testing at scale                   |
 
 ## Quick Start
 
