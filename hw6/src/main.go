@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -74,13 +76,13 @@ func search(query string) ([]Product, int) {
 		if checked >= checkLimit {
 			break
 		}
+		checked++ // count every product examined, match or not
 
 		val, ok := store.Load(id)
 		if !ok {
 			continue
 		}
 		p := val.(Product)
-		checked++ // count every product examined, match or not
 
 		if strings.Contains(strings.ToLower(p.Name), q) ||
 			strings.Contains(strings.ToLower(p.Category), q) {
@@ -92,6 +94,16 @@ func search(query string) ([]Product, int) {
 	}
 
 	return results, totalFound
+}
+
+func burnCPU(ms int) {
+	if ms <= 0 {
+		return
+	}
+	end := time.Now().Add(time.Duration(ms) * time.Millisecond)
+	for time.Now().Before(end) {
+		_ = 1 + 1
+	}
 }
 
 // ── HTTP handler ──────────────────────────────────────────────────────────────
@@ -106,6 +118,9 @@ func searchHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	products, total := search(q)
+	if cpuSpinMs > 0 {
+		burnCPU(cpuSpinMs)
+	}
 	elapsed := time.Since(start)
 
 	resp := SearchResponse{
@@ -129,10 +144,29 @@ func main() {
 	log.Println("Generating product catalog...")
 	generateProducts(totalProducts)
 
+	cpuSpinMs = parseEnvInt("CPU_SPIN_MS", 0)
+
 	http.HandleFunc("/products/search", searchHandler)
 	http.HandleFunc("/health", healthHandler)
 
 	addr := ":8080"
 	log.Printf("Listening on %s", addr)
 	log.Fatal(http.ListenAndServe(addr, nil))
+}
+
+var cpuSpinMs int
+
+func parseEnvInt(key string, fallback int) int {
+	value := strings.TrimSpace(os.Getenv(key))
+	if value == "" {
+		return fallback
+	}
+	parsed, err := strconv.Atoi(value)
+	if err != nil {
+		return fallback
+	}
+	if parsed < 0 {
+		return fallback
+	}
+	return parsed
 }
