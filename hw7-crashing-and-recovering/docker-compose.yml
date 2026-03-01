@@ -1,0 +1,63 @@
+version: "3.8"
+
+services:
+  search-broken:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: search-broken
+    ports:
+      - "8080:8080"
+      - "8081:8081"
+    command: ["broken"]
+    environment:
+      - REC_LATENCY_MS=500
+      - REC_MAX_CONCURRENT=10
+    networks:
+      - hw7-net
+    restart: unless-stopped
+
+  search-fixed:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: search-fixed
+    ports:
+      - "8082:8080"
+      - "8083:8081"
+    command: ["fixed"]
+    environment:
+      - REC_LATENCY_MS=500
+      - REC_MAX_CONCURRENT=10
+    networks:
+      - hw7-net
+    restart: unless-stopped
+    profiles:
+      - fixed # Run with: docker-compose --profile fixed up
+
+  locust:
+    image: locustio/locust:latest
+    container_name: locust
+    ports:
+      - "8089:8089"
+    volumes:
+      - ./locustfile.py:/home/locust/locustfile.py
+    command: >
+      -f /home/locust/locustfile.py
+      --headless
+      -u 50
+      -r 5
+      -t 5m
+      --csv=test_results
+      --host=http://search-broken:8080
+    networks:
+      - hw7-net
+    depends_on:
+      - search-broken
+    restart: unless-stopped
+    profiles:
+      - test
+
+networks:
+  hw7-net:
+    driver: bridge
