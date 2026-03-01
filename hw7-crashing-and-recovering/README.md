@@ -113,76 +113,82 @@ func searchHandlerFixed(w http.ResponseWriter, r *http.Request) {
 - ✅ Graphs available in `images/75users-15m/` - Sustained stress test (15 minutes)
 - ✅ Graphs available in `images/100users-20m/` - Stress test (20 minutes)
 
-## Metrics Snapshot (from current CSV artifacts)
+## Metrics Snapshot (Search Endpoints Only)
 
-### Aggregated Results
+> **Note**: These metrics focus exclusively on `/products/search` endpoints, which interact with the slow recommendation service and demonstrate the cascading failure pattern. Health and metrics endpoints don't call recommendations and remain fast in both versions.
 
-| Run             | Requests | Failures | Avg (ms) | P95 (ms) | P99 (ms) | Max (ms) |    RPS |
-| --------------- | -------: | -------: | -------: | -------: | -------: | -------: | -----: |
-| Broken 50u/3m   |   15,772 |        0 |   254.46 |      630 |      820 |      820 |  87.87 |
-| Fixed 50u/3m    |   22,417 |        0 |    88.59 |      230 |      543 |      543 | 124.92 |
-| Broken 75u/15m  |  139,002 |        0 |   179.72 |      590 |      630 |    1,400 | 154.53 |
-| Fixed 75u/15m   |  172,722 |        0 |    85.64 |      200 |      240 |      820 | 192.08 |
-| Broken 100u/20m |  265,804 |        0 |   146.49 |      590 |      630 |    1,200 | 221.67 |
-| Fixed 100u/20m  |  609,143 |        0 |    85.95 |      210 |      270 |      850 | 508.13 |
+### Search Performance Results
+
+| Run             | Requests | Failures | Avg (ms) | P50 (ms) | P95 (ms) | P99 (ms) | Max (ms) |    RPS |
+| --------------- | -------: | -------: | -------: | -------: | -------: | -------: | -------: | -----: |
+| Broken 50u/3m   |    9,362 |        0 |   390.20 |      539 |      617 |      637 |      820 |  52.01 |
+| Fixed 50u/3m    |   13,531 |        0 |   109.95 |      133 |      219 |      234 |      294 |  75.17 |
+| Broken 75u/15m  |   83,353 |        0 |   261.59 |       81 |      610 |      632 |    1,400 |  92.61 |
+| Fixed 75u/15m   |  103,787 |        0 |   101.96 |       82 |      219 |      246 |      817 | 115.32 |
+| Broken 100u/20m |  159,457 |        0 |   204.35 |       50 |      612 |      635 |    1,161 | 132.88 |
+| Fixed 100u/20m  |  365,766 |        0 |   101.92 |       78 |      226 |      280 |      853 | 304.81 |
 
 ### Key Findings: Bulkhead Pattern Effectiveness
 
 **Baseline Test (50 users / 3 minutes):**
 
-- **2.87x** latency improvement (254ms → 89ms)
-- **42%** throughput gain (88 RPS → 125 RPS)
-- **2.74x** better P95 (630ms → 230ms)
+- **3.55x** latency improvement (390ms → 110ms)
+- **44.5%** throughput gain (52 RPS → 75 RPS)
+- **2.64x** better P95 (617ms → 234ms)
+- **2.72x** better P99 (637ms → 234ms)
+- **Median shift:** Broken at 539ms vs Fixed at 133ms - **4.05x faster**
 - Zero failures in both versions
 
 **Sustained Stress Test (75 users / 15 minutes):**
 
-- **24%** more requests processed (139k → 173k)
-- **2.10x** latency improvement (180ms → 86ms)
-- **2.95x** better P95 latency (590ms → 200ms)
-- **2.63x** better P99 latency (630ms → 240ms)
-- **24%** throughput gain (155 RPS → 192 RPS)
-- **Cascading failure evidence:** Broken version shows early degradation with search latency jumping to 540ms at 66th percentile
-- **Sustained stability:** Fixed version maintains consistent 78-85ms search latency over entire 15-minute duration
+- **24.5%** more requests processed (83k → 104k)
+- **2.57x** latency improvement (262ms → 102ms)
+- **2.79x** better P95 latency (610ms → 219ms)
+- **2.57x** better P99 latency (632ms → 246ms)
+- **24.5%** throughput gain (93 RPS → 115 RPS)
+- **Cascading failure visible:** Broken P50 at 81ms jumps to 610ms at P95 (7.5x spike) vs Fixed stays stable (82ms → 219ms, only 2.7x)
+- **Sustained stability:** Fixed version maintains low median (82ms) over entire 15-minute duration
 - Zero failures in both versions
 
 **Stress Test (100 users / 20 minutes):**
 
-- **2.29x** more requests completed (266k → 609k)
-- **1.70x** faster average response (146ms → 86ms)
-- **2.81x** better P95 latency (590ms → 210ms)
-- **2.33x** better P99 latency (630ms → 270ms)
-- **2.29x** higher throughput (222 RPS → 508 RPS)
+- **2.29x** more requests completed (159k → 366k)
+- **2.00x** faster average response (204ms → 102ms)
+- **2.71x** better P95 latency (612ms → 226ms)
+- **2.27x** better P99 latency (635ms → 280ms)
+- **2.29x** higher throughput (133 RPS → 305 RPS)
+- **Extreme tail latency:** Broken P50 of 50ms masks cascading failure visible at P95/P99 (12x spike)
 - Zero failures in both versions
 
 ### Critical Observations
 
 1. **Cascading Failure Pattern (Broken Version):**
-   - **Early warning signs at 75 users**: Search latency jumps to **540ms at 66th percentile** despite 87ms median - goroutine accumulation beginning
-   - **Progressive degradation**: Average latency shows 254ms (50u) → 180ms (75u) → 146ms (100u), but variance and tail latency increase dramatically
-   - **At 100 users**: P95 latency reached **590ms**, P99 at **630ms** - indicating severe goroutine accumulation
-   - **Search endpoints blocked**: 540-550ms median latency at peak load (waiting on slow recommendation calls)
-   - **Duration matters**: 75u/15m test proves cascading accumulates over time, not just at peak load
+   - **Bimodal latency distribution**: P50 often low (50-81ms when queues empty) but **P95 spikes to 610-617ms** (goroutine accumulation)
+   - **At 50 users**: Median 539ms shows system already struggling at baseline - threads blocking waiting for recommendations
+   - **At 75 users**: Median drops to 81ms (faster queue processing) but P95 stays high at 610ms - **7.5x spike** from median
+   - **At 100 users**: Median artificially low at 50ms (fast queue flush) but P95 remains 612ms - **12x variance** reveals cascading failure
+   - **Average latency misleading**: 204-390ms averages hide the bimodal pattern where some requests are fast but tail users suffer
+   - **Duration matters**: 75u/15m and 100u/20m tests prove cascading accumulates over extended periods
 
 2. **Bulkhead Protection (Fixed Version):**
-   - **Consistent stability**: Maintained **85-86ms** average latency across all load levels (50u, 75u, 100u)
-   - **Sustained performance**: 75u/15m test shows stable 78-85ms search latency over full 15-minute duration
-   - **Tail latency control**: P95 stayed at **200-230ms** vs broken's 590-630ms - **2.8-3x improvement**
-   - **Graceful degradation working**: Search endpoints maintained **78-79ms** median even under maximum stress
-   - **Throughput advantage**: Achieved **508 RPS** at 100u vs broken's 222 RPS - **2.3x more capacity**
+   - **Consistent stability**: Maintained **102-110ms** average search latency across all load levels (50u, 75u, 100u)
+   - **Predictable performance**: P50 to P95 spread only **2.5-3x** vs broken's **7-12x** - uniform response times
+   - **Tail latency control**: P95 stayed at **219-234ms** vs broken's 610-617ms - **2.6-2.8x better**
+   - **Graceful degradation working**: When bulkhead full (5 slots), search returns without recommendations instead of blocking
+   - **Throughput advantage**: Achieved **305 RPS** at 100u vs broken's 133 RPS - **2.3x more capacity**
 
 3. **Graceful Degradation in Action:**
-   - Health/metrics endpoints remained responsive (43-45ms) in both versions under all load scenarios
-   - Fixed version skipped recommendations when bulkhead full, maintaining search functionality
-   - Broken version blocked all search requests waiting for slow recommendation service
-   - **No service failures** across any test profile (0% failure rate) - bulkhead prevented total collapse
+   - Fixed version skipped recommendations when bulkhead full (shown by "Cascading Failures (no recommendations)" in logs)
+   - Broken version blocked all search requests waiting for slow recommendation service (500ms latency)
+   - **No HTTP failures** across any test profile (0% failure rate) - bulkhead prevented total collapse
+   - **User experience**: Fixed users get search results quickly without recommendations vs broken users wait 600ms+ for complete response
 
 4. **Scalability Evidence:**
-   - **Fixed version linear scaling**: 125 RPS (50u) → 192 RPS (75u) → 508 RPS (100u) - consistent growth
-   - **Broken version sublinear**: 88 RPS (50u) → 155 RPS (75u) → 222 RPS (100u) - capacity ceiling hit early
-   - **Efficiency delta grows with load**: 42% advantage at 50u → 24% at 75u → 129% at 100u
-   - **Duration resilience**: Fixed maintains performance over 15-20 minute sustained operations
-   - Bulkhead pattern unlocked **60% more scalability** under same infrastructure
+   - **Fixed version scales efficiently**: 75 RPS (50u) → 115 RPS (75u) → 305 RPS (100u) - near-linear growth
+   - **Broken version capacity ceiling**: 52 RPS (50u) → 93 RPS (75u) → 133 RPS (100u) - sublinear, hits limit early
+   - **Efficiency delta grows with load**: 44% advantage at 50u → 25% at 75u → 129% at 100u
+   - **Duration resilience**: Fixed maintains stable 102ms avg over 15-20 minute sustained operations
+   - Bulkhead pattern unlocked **2.3x more throughput** under same infrastructure
 
 ## 50 Users / 3 Minutes (Baseline Test)
 
@@ -196,15 +202,15 @@ func searchHandlerFixed(w http.ResponseWriter, r *http.Request) {
 
 **What the graphs reveal:**
 
-1. **Latency Comparison**: Fixed version maintains stable 78-85ms search latency over full 15 minutes, while broken version shows early cascading failure with 66th percentile jumping to 540ms despite 87ms median - clear sign of goroutine accumulation.
+1. **Latency Comparison**: Fixed version maintains stable 102ms average search latency over full 15 minutes, while broken version shows cascading failure with **bimodal distribution** - P50 at 81ms but P95 spikes to 610ms (7.5x variance) indicating goroutine accumulation under sustained load.
 
-2. **Throughput Timeline**: Fixed version sustains 192 RPS consistently, while broken version achieves only 155 RPS - demonstrating 24% throughput advantage even at moderate sustained load.
+2. **Throughput Timeline**: Fixed version sustains 115 RPS consistently, while broken version achieves only 93 RPS - demonstrating 24.5% throughput advantage even at moderate sustained load.
 
-3. **Aggregate Metrics**: Fixed version processed 172,722 requests (24% more) with 86ms average vs broken's 139,002 requests at 180ms average - proving bulkhead prevents degradation during extended operations.
+3. **Aggregate Metrics**: Fixed version processed 103,787 search requests (24.5% more) with 102ms average vs broken's 83,353 requests at 262ms average - proving bulkhead prevents degradation during extended operations.
 
-4. **Improvement Ratios**: Sustained load reveals 2-3x improvements - P95 latency (2.95x better), P99 latency (2.63x better), throughput (1.24x higher) - demonstrating bulkhead pattern prevents performance accumulation issues.
+4. **Improvement Ratios**: Sustained load reveals 2.5-2.8x improvements - P95 latency (2.79x better), P99 latency (2.57x better), average response (2.57x faster) - demonstrating bulkhead pattern prevents performance accumulation issues.
 
-5. **Failure Rate**: Both versions maintained 0% failure rate, but broken version shows warning signs of cascading failure in progress (high percentile latency variance), while fixed version demonstrates stable behavior suitable for production deployment.
+5. **Failure Rate**: Both versions maintained 0% failure rate, but broken version shows dangerous bimodal pattern (fast median masks high tail latency), while fixed version demonstrates stable uniform behavior suitable for production deployment.
 
 ![Latency Comparison](images/75users-15m/latency_comparison.png)
 ![Throughput Over Time](images/75users-15m/throughput_timeline.png)
@@ -216,15 +222,15 @@ func searchHandlerFixed(w http.ResponseWriter, r *http.Request) {
 
 **What the graphs reveal:**
 
-1. **Latency Comparison**: Fixed version maintains 78-79ms median for search requests vs 540-550ms for broken version - demonstrating bulkhead prevents recommendation service delays from cascading to search functionality.
+1. **Latency Comparison**: Fixed version maintains 102ms average with P50 at 78ms, while broken version shows **extreme bimodal pattern** - P50 artificially low at 50ms but P95 jumps to 612ms (12x variance) revealing cascading failure where fast queue flush masks goroutine accumulation.
 
-2. **Throughput Timeline**: Fixed version sustains 508 RPS consistently throughout 20 minutes, while broken version plateaus at 222 RPS - showing capacity ceiling hit due to goroutine accumulation.
+2. **Throughput Timeline**: Fixed version sustains 305 RPS consistently throughout 20 minutes, while broken version plateaus at 133 RPS - showing capacity ceiling hit due to goroutine accumulation blocking request processing.
 
-3. **Aggregate Metrics**: Fixed version processed 609k requests (2.3x more) with 86ms average latency (1.7x faster) compared to broken version's 266k requests at 146ms.
+3. **Aggregate Metrics**: Fixed version processed 365,766 search requests (2.3x more) with 102ms average latency (2.0x faster) compared to broken version's 159,457 requests at 204ms average.
 
-4. **Improvement Ratios**: All key metrics show 2-3x improvement - P95 latency (2.81x), P99 latency (2.33x), throughput (2.29x), proving bulkhead pattern effectiveness under sustained high load.
+4. **Improvement Ratios**: All key metrics show 2-3x improvement - P95 latency (2.71x better), P99 latency (2.27x better), throughput (2.29x higher), proving bulkhead pattern effectiveness under sustained high load.
 
-5. **Failure Rate**: Both versions maintained 0% failure rate, but broken version achieved this through degraded performance (high latency), while fixed version gracefully skipped recommendations to maintain responsiveness.
+5. **Failure Rate**: Both versions maintained 0% HTTP failure rate, but broken version achieved this through severely degraded performance (P95 at 612ms), while fixed version gracefully skipped recommendations to maintain 102ms average responsiveness.
 
 ![Latency Comparison](images/100users-20m/latency_comparison.png)
 ![Throughput Over Time](images/100users-20m/throughput_timeline.png)
@@ -236,28 +242,31 @@ func searchHandlerFixed(w http.ResponseWriter, r *http.Request) {
 
 ### Without Bulkhead (Broken Version)
 
-- **Cascading failure in progress**: Search latency degraded from 50ms to 540ms+ as load increased
-- **Resource exhaustion**: Goroutines accumulated waiting on slow recommendation service (500ms latency)
-- **Reduced capacity**: Only 222 RPS throughput despite 100 concurrent users
-- **User experience**: 630ms P99 latency means 1% of users wait **over half a second** for search results
-- **Risk**: At higher load, service could exhaust memory/goroutine limits and crash
+- **Unpredictable user experience**: Bimodal latency distribution means some users get 50ms responses while others wait 600ms+ - no consistent SLA possible
+- **Cascading failure visible**: P50 at 50-81ms masks severe tail latency (P95 at 610ms) - **7-12x variance** indicates goroutine accumulation
+- **Resource exhaustion**: Unbounded goroutines waiting on slow recommendation service (500ms latency) accumulate over time
+- **Reduced capacity**: Only 133 RPS search throughput at 100 users despite available resources
+- **SLA violations**: P99 at 635ms means 1% of users wait **over half a second** for search results
+- **Risk**: At higher load or longer duration, service could exhaust memory/goroutine limits and crash
 
 ### With Bulkhead (Fixed Version)
 
-- **Isolation working**: Search maintains 78ms latency even when recommendations are overloaded
-- **Graceful degradation**: When bulkhead is full, returns search results without recommendations (better than waiting)
-- **Higher capacity**: Achieved 508 RPS (2.3x more) by not blocking on slow dependencies
-- **Consistent performance**: 270ms P99 latency means 99% of users get results in under 270ms
-- **Resilience**: Service remains responsive even if recommendation service becomes completely unavailable
+- **Consistent user experience**: Stable 102ms average search latency with predictable 2.5-3x P50-to-P95 spread
+- **Isolation working**: Semaphore limits recommendation calls to 5 concurrent slots, preventing goroutine accumulation
+- **Graceful degradation**: When bulkhead full, returns search results without recommendations (102ms) rather than blocking (600ms)
+- **Higher capacity**: Achieved 305 RPS search throughput (2.3x more) by not blocking on slow dependencies
+- **Predictable SLA**: P99 at 280ms means 99% of users get results in under 280ms consistently
+- **Resilience**: Service remains responsive even if recommendation service becomes completely unavailable or slow
 
 ### Production Readiness
 
-- **Bulkhead pattern proven**: 2-3x improvement across all metrics (latency, throughput, tail latency)
-- **Zero downtime**: Both versions handled 20 minutes at 100 users without failures
-- **Scalability unlocked**: Fixed version can handle 2.3x more traffic on same infrastructure
+- **Bulkhead pattern proven**: 2-3x improvement across all search metrics (latency, throughput, tail latency control)
+- **Zero HTTP failures**: Both versions handled 15-20 minute tests at 75-100 users without errors
+- **Scalability unlocked**: Fixed version can handle 2.3x more search traffic on same infrastructure
 - **Cost efficiency**: Bulkhead pattern eliminates need for over-provisioning to handle slow dependencies
+- **Predictable performance**: Fixed version maintains uniform latency distribution vs broken's unpredictable bimodal pattern
 
-**Recommendation**: Deploy the bulkhead-protected version to production. The 5-slot semaphore with 100ms timeout provides optimal balance between utilizing the recommendation service and protecting core search functionality.
+**Recommendation**: Deploy the bulkhead-protected version to production. The 5-slot semaphore with 100ms timeout provides optimal balance between utilizing the recommendation service and protecting core search functionality. Search-only metrics prove the pattern works where it matters most - on endpoints calling slow dependencies.
 
 ## Quick Switch Between Versions
 

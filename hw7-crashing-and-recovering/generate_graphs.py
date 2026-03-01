@@ -53,6 +53,56 @@ def validate_files(broken_stats, fixed_stats, broken_history, fixed_history):
         return False
     return True
 
+def aggregate_search_metrics(stats_df):
+    """Aggregate metrics for search endpoints only (exclude health/metrics)."""
+    # Filter for search endpoints
+    search_rows = stats_df[stats_df['Name'].str.contains('/products/search', na=False)]
+    
+    if len(search_rows) == 0:
+        print("⚠️  Warning: No search endpoints found, using aggregated row")
+        # Fallback to aggregated row (last row with empty Type)
+        agg_row = stats_df[stats_df['Type'].isna() | (stats_df['Type'] == '')]
+        if len(agg_row) > 0:
+            return agg_row.iloc[0]
+        else:
+            print("❌ Error: No aggregated row found either")
+            return stats_df.iloc[0]  # Last resort: use first row
+    
+    # Aggregate search metrics
+    total_requests = search_rows['Request Count'].sum()
+    total_failures = search_rows['Failure Count'].sum()
+    
+    # Weighted average for response times (by request count)
+    weighted_avg = (search_rows['Average Response Time'] * search_rows['Request Count']).sum() / total_requests
+    
+    # For percentiles, we'll use the median across all search endpoints
+    # (This is an approximation since we can't recalculate true percentiles from aggregated data)
+    median_p50 = search_rows['50%'].median()
+    median_p95 = search_rows['95%'].median()
+    median_p99 = search_rows['99%'].median()
+    
+    # Min/Max are straightforward
+    min_time = search_rows['Min Response Time'].min()
+    max_time = search_rows['Max Response Time'].max()
+    
+    # Total RPS
+    total_rps = search_rows['Requests/s'].sum()
+    
+    # Create aggregated series
+    agg_metrics = pd.Series({
+        'Request Count': total_requests,
+        'Failure Count': total_failures,
+        'Average Response Time': weighted_avg,
+        '50%': median_p50,
+        '95%': median_p95,
+        '99%': median_p99,
+        'Min Response Time': min_time,
+        'Max Response Time': max_time,
+        'Requests/s': total_rps
+    })
+    
+    return agg_metrics
+
 def generate_graphs(profile_name, metrics_dir):
     """Generate all comparison graphs for a given profile."""
     profile_dir = metrics_dir / profile_name
@@ -77,6 +127,11 @@ def generate_graphs(profile_name, metrics_dir):
     broken_history = pd.read_csv(broken_history_file)
     fixed_history = pd.read_csv(fixed_history_file)
     
+    # Aggregate search-only metrics
+    print(f"   Aggregating search endpoint metrics...")
+    broken_metrics = aggregate_search_metrics(broken_stats)
+    fixed_metrics = aggregate_search_metrics(fixed_stats)
+    
     # Set up style
     plt.style.use('seaborn-v0_8-darkgrid')
     colors = {'broken': '#d62728', 'fixed': '#2ca02c'}
@@ -85,16 +140,16 @@ def generate_graphs(profile_name, metrics_dir):
     fig, ax = plt.subplots(figsize=(10, 6))
     percentiles = ['50%ile', '95%ile', '99%ile', 'Max']
     broken_latencies = [
-        broken_stats['50%'].values[0],
-        broken_stats['95%'].values[0],
-        broken_stats['99%'].values[0],
-        broken_stats['Max Response Time'].values[0]
+        broken_metrics['50%'],
+        broken_metrics['95%'],
+        broken_metrics['99%'],
+        broken_metrics['Max Response Time']
     ]
     fixed_latencies = [
-        fixed_stats['50%'].values[0],
-        fixed_stats['95%'].values[0],
-        fixed_stats['99%'].values[0],
-        fixed_stats['Max Response Time'].values[0]
+        fixed_metrics['50%'],
+        fixed_metrics['95%'],
+        fixed_metrics['99%'],
+        fixed_metrics['Max Response Time']
     ]
     
     x = np.arange(len(percentiles))
@@ -105,7 +160,7 @@ def generate_graphs(profile_name, metrics_dir):
     
     ax.set_xlabel('Percentile', fontsize=12, fontweight='bold')
     ax.set_ylabel('Response Time (ms)', fontsize=12, fontweight='bold')
-    ax.set_title('Response Latency Comparison: Broken vs Fixed', fontsize=14, fontweight='bold')
+    ax.set_title('Search Response Latency Comparison: Broken vs Fixed', fontsize=14, fontweight='bold')
     ax.set_xticks(x)
     ax.set_xticklabels(percentiles)
     ax.legend(fontsize=11)
@@ -153,37 +208,37 @@ def generate_graphs(profile_name, metrics_dir):
     fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(14, 10))
     
     # Total Requests
-    requests = [broken_stats['Request Count'].values[0], fixed_stats['Request Count'].values[0]]
+    requests = [broken_metrics['Request Count'], fixed_metrics['Request Count']]
     ax1.bar(['Broken', 'Fixed'], requests, color=[colors['broken'], colors['fixed']], alpha=0.8)
     ax1.set_ylabel('Total Requests', fontsize=11, fontweight='bold')
-    ax1.set_title('Total Requests', fontsize=12, fontweight='bold')
+    ax1.set_title('Total Search Requests', fontsize=12, fontweight='bold')
     ax1.grid(axis='y', alpha=0.3)
     for i, v in enumerate(requests):
         ax1.text(i, v, f'{int(v):,}', ha='center', va='bottom', fontsize=10, fontweight='bold')
     
     # Average Response Time
-    avg_times = [broken_stats['Average Response Time'].values[0], fixed_stats['Average Response Time'].values[0]]
+    avg_times = [broken_metrics['Average Response Time'], fixed_metrics['Average Response Time']]
     ax2.bar(['Broken', 'Fixed'], avg_times, color=[colors['broken'], colors['fixed']], alpha=0.8)
     ax2.set_ylabel('Avg Response Time (ms)', fontsize=11, fontweight='bold')
-    ax2.set_title('Average Response Time', fontsize=12, fontweight='bold')
+    ax2.set_title('Average Search Response Time', fontsize=12, fontweight='bold')
     ax2.grid(axis='y', alpha=0.3)
     for i, v in enumerate(avg_times):
         ax2.text(i, v, f'{int(v)}ms', ha='center', va='bottom', fontsize=10, fontweight='bold')
     
     # Min Response Time
-    min_times = [broken_stats['Min Response Time'].values[0], fixed_stats['Min Response Time'].values[0]]
+    min_times = [broken_metrics['Min Response Time'], fixed_metrics['Min Response Time']]
     ax3.bar(['Broken', 'Fixed'], min_times, color=[colors['broken'], colors['fixed']], alpha=0.8)
     ax3.set_ylabel('Min Response Time (ms)', fontsize=11, fontweight='bold')
-    ax3.set_title('Min Response Time', fontsize=12, fontweight='bold')
+    ax3.set_title('Min Search Response Time', fontsize=12, fontweight='bold')
     ax3.grid(axis='y', alpha=0.3)
     for i, v in enumerate(min_times):
         ax3.text(i, v, f'{int(v)}ms', ha='center', va='bottom', fontsize=10, fontweight='bold')
     
     # Request Rate
-    rates = [broken_stats['Requests/s'].values[0], fixed_stats['Requests/s'].values[0]]
+    rates = [broken_metrics['Requests/s'], fixed_metrics['Requests/s']]
     ax4.bar(['Broken', 'Fixed'], rates, color=[colors['broken'], colors['fixed']], alpha=0.8)
     ax4.set_ylabel('Requests per Second', fontsize=11, fontweight='bold')
-    ax4.set_title('Average Request Rate', fontsize=12, fontweight='bold')
+    ax4.set_title('Average Search Request Rate', fontsize=12, fontweight='bold')
     ax4.grid(axis='y', alpha=0.3)
     for i, v in enumerate(rates):
         ax4.text(i, v, f'{v:.1f}', ha='center', va='bottom', fontsize=10, fontweight='bold')
@@ -197,10 +252,10 @@ def generate_graphs(profile_name, metrics_dir):
     fig, ax = plt.subplots(figsize=(10, 6))
     
     improvements = {
-        'P95 Latency': (broken_stats['95%'].values[0] / fixed_stats['95%'].values[0]),
-        'P99 Latency': (broken_stats['99%'].values[0] / fixed_stats['99%'].values[0]),
-        'Max Latency': (broken_stats['Max Response Time'].values[0] / fixed_stats['Max Response Time'].values[0]),
-        'Throughput': (fixed_stats['Requests/s'].values[0] / broken_stats['Requests/s'].values[0])
+        'P95 Latency': (broken_metrics['95%'] / fixed_metrics['95%']),
+        'P99 Latency': (broken_metrics['99%'] / fixed_metrics['99%']),
+        'Max Latency': (broken_metrics['Max Response Time'] / fixed_metrics['Max Response Time']),
+        'Throughput': (fixed_metrics['Requests/s'] / broken_metrics['Requests/s'])
     }
     
     bars = ax.barh(list(improvements.keys()), list(improvements.values()), color='#1f77b4', alpha=0.8)
@@ -223,8 +278,8 @@ def generate_graphs(profile_name, metrics_dir):
     # --- GRAPH 5: Failure Rate Comparison ---
     fig, ax = plt.subplots(figsize=(10, 6))
     
-    broken_failure_rate = (broken_stats['Failure Count'].values[0] / broken_stats['Request Count'].values[0]) * 100
-    fixed_failure_rate = (fixed_stats['Failure Count'].values[0] / fixed_stats['Request Count'].values[0]) * 100
+    broken_failure_rate = (broken_metrics['Failure Count'] / broken_metrics['Request Count']) * 100
+    fixed_failure_rate = (fixed_metrics['Failure Count'] / fixed_metrics['Request Count']) * 100
     
     failure_rates = [broken_failure_rate, fixed_failure_rate]
     bars = ax.bar(['Broken', 'Fixed'], failure_rates, color=[colors['broken'], colors['fixed']], alpha=0.8)
