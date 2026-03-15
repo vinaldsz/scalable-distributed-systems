@@ -1,5 +1,24 @@
 # Cost Savings Assignment
 
+## Index
+
+- [Problem Statement](#problem-statement-when-your-startups-flash-sale-almost-failed)
+- [Phase 1: Synchronous Baseline](#phase-1-synchronous-baseline)
+- [Phase 3: Async Solution (Terraform + ECS + SNS + SQS)](#phase-3-async-solution-terraform--ecs--sns--sqs)
+- [Phase 4: The Queue Problem](#phase-4-the-queue-problem)
+- [Phase 5: Scale Your Workers](#phase-5-scale-your-workers)
+- [Part III: What If You Didn't Need Queues?](#part-iii-what-if-you-didnt-need-queues)
+- [Final Answers](#final-answers)
+- [Cost Reality Check](#cost-reality-check)
+- [The Trade-Off Analysis](#the-trade-off-analysis)
+- [Startup Switch Recommendation](#startup-switch-recommendation)
+
+## Problem Statement: When Your Startup's Flash Sale Almost Failed
+
+Scenario: Our startup ran a flash sale and discovered that the original synchronous order flow could not absorb burst traffic without severe latency spikes. We redesigned the system to move from blocking request-time processing to asynchronous event-driven processing and then evaluated whether a serverless Lambda-based approach could further reduce operational burden and cost.
+
+This report documents the progression from synchronous baseline to queue-backed async architecture to Lambda, including performance observations, cold-start behavior, cost analysis, and a production recommendation.
+
 ## Phase 1: Synchronous Baseline
 
 This phase tests a synchronous order API where each order waits for payment verification before response.
