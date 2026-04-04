@@ -1,0 +1,10 @@
+aws_region = "us-west-2"
+environment = "dev"
+
+# Current pushed ECR image URIs.
+receiver_image  = "614349772916.dkr.ecr.us-west-2.amazonaws.com/order-receiver:latest"
+processor_image = "614349772916.dkr.ecr.us-west-2.amazonaws.com/order-processor:latest"
+
+receiver_desired_count  = 1
+processor_desired_count = 1
+processor_workers       = 1

@@ -1,0 +1,12 @@
+aws_region = "us-west-2"
+environment = "dev"
+
+# Existing SNS topic from Part II.
+existing_sns_topic_name = "order-processing-events"
+
+# Update after running scripts/build_push_lambda_ecr.sh.
+lambda_image = "614349772916.dkr.ecr.us-west-2.amazonaws.com/order-processor-lambda:latest"
+
+lambda_memory_size          = 512
+lambda_timeout_seconds      = 30
+lambda_reserved_concurrency = 5
