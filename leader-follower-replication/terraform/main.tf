@@ -67,7 +67,7 @@ resource "aws_instance" "kv_host" {
 
   # 20GB root volume — enough for Docker images
   root_block_device {
-    volume_size = 20
+    volume_size = 30
     volume_type = "gp3"
   }
 

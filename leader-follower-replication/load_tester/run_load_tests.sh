@@ -13,10 +13,9 @@ CONCURRENCY="${CONCURRENCY:-20}"
 RESULTS_DIR="analysis/results"
 mkdir -p "$RESULTS_DIR"
 
-# If HOST is set, override the base URLs in the load tester via env vars.
 HOST_FLAG=""
 if [[ -n "${HOST:-}" ]]; then
-  export LT_HOST="$HOST"
+  HOST_FLAG="-host $HOST"
   echo "Targeting remote host: $HOST"
 fi
 
@@ -32,7 +31,8 @@ for cfg in "${CONFIGS[@]}"; do
       -write-pct "$wpct" \
       -duration "$DURATION" \
       -concurrency "$CONCURRENCY" \
-      -out "$out"
+      -out "$out" \
+      $HOST_FLAG
   done
 done
 
